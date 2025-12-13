@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
@@ -10,13 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    description: '',
-  });
   const [calcData, setCalcData] = useState({
     length: '',
     width: '',
@@ -29,45 +21,6 @@ const Index = () => {
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
     element?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('https://functions.poehali.dev/be3cc4a5-368a-4dc0-b39f-798608f8b778', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: '✅ Заказ отправлен!',
-          description: data.message || 'Ожидайте ответа от менеджера.',
-        });
-        setFormData({ name: '', email: '', phone: '', description: '' });
-      } else {
-        toast({
-          title: '❌ Ошибка отправки',
-          description: data.error || 'Попробуйте еще раз позже',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: '❌ Ошибка',
-        description: 'Не удалось отправить заявку. Проверьте интернет-соединение.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const calculatePrice = () => {
@@ -172,14 +125,7 @@ const Index = () => {
               >
                 Калькулятор
               </button>
-              <button
-                onClick={() => scrollToSection('order')}
-                className={`transition-colors ${
-                  activeSection === 'order' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Заказ
-              </button>
+
               <button
                 onClick={() => scrollToSection('contacts')}
                 className={`transition-colors ${
@@ -246,12 +192,15 @@ const Index = () => {
                 </div>
               </div>
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" onClick={() => scrollToSection('order')} className="text-lg">
-                  Сделать заказ
-                  <Icon name="ArrowRight" size={20} className="ml-2" />
+                <Button size="lg" asChild className="text-lg">
+                  <a href="https://t.me/levodel_maksim" target="_blank" rel="noopener noreferrer">
+                    <Icon name="Send" size={20} className="mr-2" />
+                    Связаться с нами
+                  </a>
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => scrollToSection('services')}>
-                  Наши услуги
+                <Button size="lg" variant="outline" onClick={() => scrollToSection('calculator')}>
+                  <Icon name="Calculator" size={20} className="mr-2" />
+                  Рассчитать стоимость
                 </Button>
               </div>
               <div className="flex items-center gap-8 pt-4">
@@ -457,90 +406,6 @@ const Index = () => {
                     * Расчёт приблизительный. Точную стоимость уточняйте у менеджера
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      <section id="order" className="py-24 relative">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-12 animate-fade-in">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Сделать заказ</h2>
-              <p className="text-xl text-muted-foreground">
-                Заполните форму, и мы свяжемся с вами в ближайшее время
-              </p>
-            </div>
-
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-              <CardContent className="pt-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Ваше имя</Label>
-                    <Input
-                      id="name"
-                      placeholder="Иван Иванов"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                      className="bg-background/50"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="ivan@example.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      required
-                      className="bg-background/50"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Телефон</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+7 (999) 123-45-67"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      required
-                      className="bg-background/50"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Описание заказа</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Опишите, что вы хотите напечатать..."
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      required
-                      rows={6}
-                      className="bg-background/50"
-                    />
-                  </div>
-
-                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
-                        Отправка...
-                      </>
-                    ) : (
-                      <>
-                        Отправить заявку
-                        <Icon name="Send" size={20} className="ml-2" />
-                      </>
-                    )}
-                  </Button>
-                </form>
               </CardContent>
             </Card>
           </div>
