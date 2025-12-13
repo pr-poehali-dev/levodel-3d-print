@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const Index = () => {
   const [activeSection, setActiveSection] = useState('home');
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,13 +24,43 @@ const Index = () => {
     element?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: 'Заявка отправлена!',
-      description: 'Мы свяжемся с вами в ближайшее время.',
-    });
-    setFormData({ name: '', email: '', phone: '', description: '' });
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/be3cc4a5-368a-4dc0-b39f-798608f8b778', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: '✅ Заказ отправлен!',
+          description: data.message || 'Ожидайте ответа от менеджера.',
+        });
+        setFormData({ name: '', email: '', phone: '', description: '' });
+      } else {
+        toast({
+          title: '❌ Ошибка отправки',
+          description: data.error || 'Попробуйте еще раз позже',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: '❌ Ошибка',
+        description: 'Не удалось отправить заявку. Проверьте интернет-соединение.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const services = [
@@ -328,9 +359,18 @@ const Index = () => {
                     />
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full">
-                    Отправить заявку
-                    <Icon name="Send" size={20} className="ml-2" />
+                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Icon name="Loader2" size={20} className="mr-2 animate-spin" />
+                        Отправка...
+                      </>
+                    ) : (
+                      <>
+                        Отправить заявку
+                        <Icon name="Send" size={20} className="ml-2" />
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>

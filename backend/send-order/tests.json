@@ -1,0 +1,40 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test POST with valid data",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Тест Тестович",
+        "email": "test@example.com",
+        "phone": "+7 (999) 123-45-67",
+        "description": "Тестовая заявка на печать детали"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test POST with missing fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "Тест"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
