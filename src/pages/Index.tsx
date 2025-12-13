@@ -17,6 +17,13 @@ const Index = () => {
     phone: '',
     description: '',
   });
+  const [calcData, setCalcData] = useState({
+    length: '',
+    width: '',
+    height: '',
+    material: 'pla',
+  });
+  const [calcResult, setCalcResult] = useState<number | null>(null);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -63,6 +70,38 @@ const Index = () => {
     }
   };
 
+  const calculatePrice = () => {
+    const l = parseFloat(calcData.length) || 0;
+    const w = parseFloat(calcData.width) || 0;
+    const h = parseFloat(calcData.height) || 0;
+
+    if (l <= 0 || w <= 0 || h <= 0) {
+      toast({
+        title: '⚠️ Ошибка',
+        description: 'Введите корректные размеры',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const volumeCm3 = l * w * h;
+    const volumeMl = volumeCm3;
+
+    const materialPrices: { [key: string]: number } = {
+      pla: 0.03,
+      abs: 0.035,
+      petg: 0.04,
+      tpu: 0.05,
+    };
+
+    const baseCost = volumeMl * materialPrices[calcData.material];
+    const markup = baseCost * 1.5;
+    const delivery = 300;
+    const total = Math.ceil(markup + delivery);
+
+    setCalcResult(total);
+  };
+
   const services = [
     {
       icon: 'Box',
@@ -83,6 +122,11 @@ const Index = () => {
       icon: 'Zap',
       title: 'Срочная печать',
       description: 'Работаем 24/7 без выходных для выполнения срочных заказов',
+    },
+    {
+      icon: 'Paintbrush',
+      title: 'Фигурки под раскраску',
+      description: 'Белые фигурки + набор красок (6 цветов) и 2 кисточки в комплекте',
     },
   ];
 
@@ -119,6 +163,14 @@ const Index = () => {
                 }`}
               >
                 Услуги
+              </button>
+              <button
+                onClick={() => scrollToSection('calculator')}
+                className={`transition-colors ${
+                  activeSection === 'calculator' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Калькулятор
               </button>
               <button
                 onClick={() => scrollToSection('order')}
@@ -169,6 +221,30 @@ const Index = () => {
                 Levodel Studio — молодая команда профессионалов, превращающая идеи в реальность с помощью
                 передовых технологий 3D печати
               </p>
+              <div className="bg-card/50 backdrop-blur-sm border border-primary/30 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon name="Paintbrush" size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Фигурки под раскраску</h3>
+                    <p className="text-muted-foreground mb-3">
+                      Печатаем белые фигурки на заказ, которые можно раскрасить самостоятельно!
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <div className="px-3 py-1 bg-white text-black rounded-full text-sm font-medium">Белый</div>
+                      <div className="px-3 py-1 bg-black text-white rounded-full text-sm font-medium">Чёрный</div>
+                      <div className="px-3 py-1 bg-red-600 text-white rounded-full text-sm font-medium">Красный</div>
+                      <div className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium">Синий</div>
+                      <div className="px-3 py-1 bg-yellow-400 text-black rounded-full text-sm font-medium">Жёлтый</div>
+                      <div className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-medium">Зелёный</div>
+                    </div>
+                    <p className="text-sm text-primary font-medium">
+                      ✨ В комплекте: 6 красок + 2 кисточки
+                    </p>
+                  </div>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" onClick={() => scrollToSection('order')} className="text-lg">
                   Сделать заказ
@@ -291,6 +367,98 @@ const Index = () => {
               alt="Процесс печати"
               className="rounded-lg shadow-2xl border border-primary/20 max-w-4xl mx-auto"
             />
+          </div>
+        </div>
+      </section>
+
+      <section id="calculator" className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="container mx-auto px-4 relative">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12 animate-fade-in">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">Калькулятор стоимости</h2>
+              <p className="text-xl text-muted-foreground">
+                Рассчитайте примерную стоимость вашего заказа
+              </p>
+            </div>
+
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="length">Длина (мм)</Label>
+                      <Input
+                        id="length"
+                        type="number"
+                        placeholder="100"
+                        value={calcData.length}
+                        onChange={(e) => setCalcData({ ...calcData, length: e.target.value })}
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="width">Ширина (мм)</Label>
+                      <Input
+                        id="width"
+                        type="number"
+                        placeholder="100"
+                        value={calcData.width}
+                        onChange={(e) => setCalcData({ ...calcData, width: e.target.value })}
+                        className="bg-background/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="height">Высота (мм)</Label>
+                      <Input
+                        id="height"
+                        type="number"
+                        placeholder="100"
+                        value={calcData.height}
+                        onChange={(e) => setCalcData({ ...calcData, height: e.target.value })}
+                        className="bg-background/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="material">Материал</Label>
+                    <select
+                      id="material"
+                      value={calcData.material}
+                      onChange={(e) => setCalcData({ ...calcData, material: e.target.value })}
+                      className="w-full h-10 px-3 rounded-md bg-background/50 border border-input text-foreground"
+                    >
+                      <option value="pla">PLA (стандартный пластик)</option>
+                      <option value="abs">ABS (прочный пластик)</option>
+                      <option value="petg">PETG (гибкий и прочный)</option>
+                      <option value="tpu">TPU (эластичный)</option>
+                    </select>
+                  </div>
+
+                  <Button onClick={calculatePrice} size="lg" className="w-full">
+                    <Icon name="Calculator" size={20} className="mr-2" />
+                    Рассчитать стоимость
+                  </Button>
+
+                  {calcResult !== null && (
+                    <div className="bg-primary/10 border border-primary/30 rounded-lg p-6 animate-fade-in">
+                      <div className="text-center">
+                        <div className="text-sm text-muted-foreground mb-2">Стоимость с доставкой</div>
+                        <div className="text-4xl font-bold text-primary mb-2">{calcResult} ₽</div>
+                        <div className="text-sm text-muted-foreground">
+                          В стоимость включена доставка по городу
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-xs text-muted-foreground text-center">
+                    * Расчёт приблизительный. Точную стоимость уточняйте у менеджера
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
