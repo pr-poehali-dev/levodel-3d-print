@@ -33,9 +33,12 @@ const Index = () => {
     fileLink: '',
     uploadedFileUrl: '',
     fileType: '',
+    promoCode: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoApplied, setPromoApplied] = useState(false);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -145,6 +148,38 @@ const Index = () => {
     }
   };
 
+  const checkPromoCode = () => {
+    const savedPrizes = localStorage.getItem('wonPrizes');
+    if (!savedPrizes || !orderForm.promoCode) {
+      toast({
+        title: '❌ Неверный промокод',
+        description: 'Промокод не найден',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const prizes = JSON.parse(savedPrizes);
+    const validPrize = prizes.find(
+      (p: any) => p.promoCode === orderForm.promoCode.toUpperCase() && p.expiresAt > Date.now()
+    );
+
+    if (validPrize) {
+      setPromoDiscount(validPrize.discount);
+      setPromoApplied(true);
+      toast({
+        title: '✅ Промокод применён!',
+        description: `Скидка ${validPrize.discount}% активирована`,
+      });
+    } else {
+      toast({
+        title: '❌ Промокод недействителен',
+        description: 'Промокод истёк или не существует',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -160,18 +195,36 @@ const Index = () => {
     setIsSubmitting(true);
 
     try {
+      const orderData = {
+        ...orderForm,
+        discount: promoDiscount,
+      };
+
       const response = await fetch('https://functions.poehali.dev/be3cc4a5-368a-4dc0-b39f-798608f8b778', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderForm),
+        body: JSON.stringify(orderData),
       });
 
       if (response.ok) {
+        if (promoApplied && orderForm.promoCode) {
+          const savedPrizes = localStorage.getItem('wonPrizes');
+          if (savedPrizes) {
+            const prizes = JSON.parse(savedPrizes);
+            const updatedPrizes = prizes.filter(
+              (p: any) => p.promoCode !== orderForm.promoCode.toUpperCase()
+            );
+            localStorage.setItem('wonPrizes', JSON.stringify(updatedPrizes));
+          }
+        }
+
         toast({
           title: '✅ Заказ отправлен!',
-          description: 'Мы свяжемся с вами в ближайшее время',
+          description: promoDiscount > 0 
+            ? `Скидка ${promoDiscount}% применена! Мы свяжемся с вами`
+            : 'Мы свяжемся с вами в ближайшее время',
         });
         setOrderForm({
           name: '',
@@ -186,7 +239,10 @@ const Index = () => {
           fileLink: '',
           uploadedFileUrl: '',
           fileType: '',
+          promoCode: '',
         });
+        setPromoDiscount(0);
+        setPromoApplied(false);
       } else {
         throw new Error('Ошибка отправки');
       }
@@ -384,6 +440,34 @@ const Index = () => {
               <p className="text-lg md:text-xl text-muted-foreground">
                 Levodel Studio — молодая команда профессионалов, превращающая идеи в реальность с помощью передовых технологий 3D печати
               </p>
+              
+              <div className="bg-gradient-to-r from-purple-500/90 to-pink-500/90 backdrop-blur-sm border-2 border-purple-300 rounded-xl p-4 md:p-6 shadow-xl animate-pulse-slow">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon name="Gift" size={28} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                      🎰 Рулетка с призами!
+                      <span className="bg-yellow-400 text-purple-900 text-xs px-2 py-1 rounded-full font-bold">НОВИНКА</span>
+                    </h3>
+                    <p className="text-white/90 mb-3">
+                      Крутите колесо фортуны и выигрывайте скидки до 35%! Каждый день — бонусы. Участвуйте сейчас!
+                    </p>
+                    <Button 
+                      asChild
+                      className="bg-white text-purple-700 hover:bg-white/90 font-bold"
+                      size="sm"
+                    >
+                      <a href="/roulette" className="flex items-center gap-2">
+                        <Icon name="Sparkles" size={18} />
+                        Крутить рулетку
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-card/50 backdrop-blur-sm border border-primary/30 rounded-lg p-4 md:p-6">
                 <div className="flex flex-col sm:flex-row items-start gap-4">
                   <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0">
@@ -784,6 +868,51 @@ const Index = () => {
                       Чем подробнее описание, тем точнее мы выполним заказ
                     </p>
                   </div>
+                </div>
+
+                <div className="border-t border-border pt-4 md:pt-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Icon name="Gift" className="text-purple-500" />
+                    Промокод на скидку
+                  </h3>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        id="order-promo"
+                        type="text"
+                        placeholder="Введите промокод"
+                        value={orderForm.promoCode}
+                        onChange={(e) => setOrderForm({ ...orderForm, promoCode: e.target.value.toUpperCase() })}
+                        disabled={promoApplied}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={checkPromoCode}
+                      disabled={!orderForm.promoCode || promoApplied}
+                      variant="outline"
+                    >
+                      {promoApplied ? (
+                        <>
+                          <Icon name="CheckCircle" size={18} className="mr-2 text-green-600" />
+                          Применён
+                        </>
+                      ) : (
+                        'Применить'
+                      )}
+                    </Button>
+                  </div>
+                  {promoApplied && promoDiscount > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3 flex items-center gap-2">
+                      <Icon name="BadgePercent" size={20} className="text-green-600" />
+                      <span className="text-sm font-medium text-green-900">
+                        Скидка {promoDiscount}% будет применена к вашему заказу!
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Выиграйте промокод в рулетке или получите от нас
+                  </p>
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
