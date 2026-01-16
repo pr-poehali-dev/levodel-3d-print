@@ -31,8 +31,11 @@ const Index = () => {
     quantity: '1',
     description: '',
     fileLink: '',
+    uploadedFileUrl: '',
+    fileType: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -71,6 +74,75 @@ const Index = () => {
     const total = Math.ceil(markup + delivery);
 
     setCalcResult(total);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['model/stl', 'application/sla', 'image/png', 'image/jpeg', 'image/jpg'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (!['stl', 'png', 'jpg', 'jpeg'].includes(fileExtension || '')) {
+      toast({
+        title: '⚠️ Неверный формат',
+        description: 'Загружайте только STL или PNG/JPG файлы',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        const base64Data = reader.result?.toString().split(',')[1];
+        
+        const response = await fetch('https://functions.poehali.dev/93ac28b1-a8af-4e50-b41e-84b7a891e0c0', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileData: base64Data,
+            fileName: file.name,
+            fileType: fileExtension,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const modelType = fileExtension === 'stl' ? 'ready' : 'needs_modeling';
+          
+          setOrderForm({
+            ...orderForm,
+            uploadedFileUrl: data.fileUrl,
+            fileType: modelType,
+            fileLink: data.fileUrl,
+          });
+          
+          toast({
+            title: '✅ Файл загружен!',
+            description: fileExtension === 'stl' 
+              ? 'Готовая 3D модель получена' 
+              : 'Изображение загружено — мы создадим модель',
+          });
+        } else {
+          throw new Error('Ошибка загрузки');
+        }
+      };
+    } catch (error) {
+      toast({
+        title: '❌ Ошибка загрузки',
+        description: 'Не удалось загрузить файл',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleOrderSubmit = async (e: React.FormEvent) => {
@@ -112,6 +184,8 @@ const Index = () => {
           quantity: '1',
           description: '',
           fileLink: '',
+          uploadedFileUrl: '',
+          fileType: '',
         });
       } else {
         throw new Error('Ошибка отправки');
@@ -224,6 +298,10 @@ const Index = () => {
               <button onClick={() => scrollToSection('order')} className={`transition-colors text-sm ${activeSection === 'order' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                 Заказать
               </button>
+              <a href="/roulette" className="transition-colors text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                <Icon name="Sparkles" size={16} />
+                Рулетка
+              </a>
               <button onClick={() => scrollToSection('faq')} className={`transition-colors text-sm ${activeSection === 'faq' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                 FAQ
               </button>
@@ -264,6 +342,10 @@ const Index = () => {
               <button onClick={() => scrollToSection('order')} className="block w-full text-left py-2 text-muted-foreground hover:text-foreground">
                 Заказать
               </button>
+              <a href="/roulette" className="block w-full text-left py-2 text-muted-foreground hover:text-foreground flex items-center gap-2">
+                <Icon name="Sparkles" size={18} />
+                Рулетка
+              </a>
               <button onClick={() => scrollToSection('faq')} className="block w-full text-left py-2 text-muted-foreground hover:text-foreground">
                 FAQ
               </button>
@@ -636,7 +718,47 @@ const Index = () => {
                   </div>
 
                   <div className="mb-4">
-                    <Label htmlFor="order-filelink">Ссылка на 3D модель</Label>
+                    <Label htmlFor="order-file">Загрузить файл STL или PNG</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Input
+                          id="order-file"
+                          type="file"
+                          accept=".stl,.png,.jpg,.jpeg"
+                          onChange={handleFileUpload}
+                          disabled={isUploading}
+                          className="cursor-pointer"
+                        />
+                        {isUploading && (
+                          <Icon name="Loader2" size={20} className="animate-spin text-primary" />
+                        )}
+                      </div>
+                      
+                      {orderForm.uploadedFileUrl && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
+                          <Icon name="CheckCircle" size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                          <div className="text-sm">
+                            <p className="font-medium text-green-900">
+                              {orderForm.fileType === 'ready' ? '✅ Готовая 3D модель' : '🎨 Изображение для моделирования'}
+                            </p>
+                            <p className="text-green-700 text-xs">
+                              {orderForm.fileType === 'ready' 
+                                ? 'STL файл готов к печати'
+                                : 'Мы создадим 3D модель по вашему изображению'}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <p className="text-xs text-muted-foreground">
+                        💾 STL — готовая модель для печати<br />
+                        🖼️ PNG/JPG — мы создадим модель по изображению
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <Label htmlFor="order-filelink">Или укажите ссылку</Label>
                     <Input
                       id="order-filelink"
                       type="url"
@@ -645,7 +767,7 @@ const Index = () => {
                       onChange={(e) => setOrderForm({ ...orderForm, fileLink: e.target.value })}
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Google Drive, Яндекс.Диск или любая ссылка на STL/OBJ файл
+                      Google Drive, Яндекс.Диск или любая ссылка
                     </p>
                   </div>
 
