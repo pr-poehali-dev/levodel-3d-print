@@ -149,11 +149,13 @@ export default function Roulette() {
     localStorage.setItem('plasticBalance', newBalance.toString());
 
     const winningIndex = selectWinningPrize();
-    const itemAngle = 360 / prizes.length;
-    const baseSpins = 5;
-    const targetAngle = baseSpins * 360 + (winningIndex * itemAngle) + itemAngle / 2;
+    const itemWidth = 170;
+    const totalItems = prizes.length * 4;
+    const fullCycles = 20;
+    const extraOffset = Math.random() * 50 - 25;
+    const targetPosition = fullCycles * prizes.length * itemWidth + winningIndex * itemWidth + itemWidth / 2 + extraOffset;
     
-    setRotation(targetAngle);
+    setRotation(targetPosition);
 
     setTimeout(() => {
       setIsSpinning(false);
@@ -180,7 +182,7 @@ export default function Roulette() {
           description: `Вы выиграли: ${wonPrize.name}! Свяжитесь с нами для получения приза.`,
         });
       }
-    }, 5000);
+    }, 15000);
   };
 
   return (
@@ -222,21 +224,22 @@ export default function Roulette() {
                   <div className="w-0 h-0 border-l-[25px] border-r-[25px] border-t-[40px] border-l-transparent border-r-transparent border-t-red-500 drop-shadow-2xl"></div>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl bg-gray-100 p-4">
+                <div className="overflow-hidden rounded-2xl bg-gradient-to-b from-gray-50 to-gray-200 p-6 shadow-inner">
                   <div 
-                    className="flex transition-transform duration-5000 ease-out"
+                    className="flex transition-transform"
                     style={{ 
-                      transform: `translateX(-${rotation % (prizes.length * 160)}px)`,
-                      transitionTimingFunction: 'cubic-bezier(0.17, 0.67, 0.12, 0.99)'
+                      transform: `translateX(-${rotation}px)`,
+                      transitionDuration: isSpinning ? '15000ms' : '0ms',
+                      transitionTimingFunction: isSpinning ? 'cubic-bezier(0.25, 0.1, 0.25, 1)' : 'ease',
                     }}
                   >
-                    {[...prizes, ...prizes, ...prizes, ...prizes].map((prize, index) => (
+                    {Array(80).fill(prizes).flat().map((prize, index) => (
                       <div
                         key={index}
-                        className={`${prize.color} text-white p-6 rounded-xl mx-2 flex-shrink-0 w-[150px] h-[150px] flex flex-col items-center justify-center text-center shadow-lg`}
+                        className={`${prize.color} text-white p-4 rounded-xl mx-2 flex-shrink-0 w-[150px] h-[150px] flex flex-col items-center justify-center text-center shadow-xl border-2 border-white/30 transition-all hover:scale-105`}
                       >
                         <Icon name={prize.icon} size={40} className="mb-2" />
-                        <span className="font-bold text-sm">{prize.name}</span>
+                        <span className="font-bold text-sm leading-tight">{prize.name}</span>
                       </div>
                     ))}
                   </div>
