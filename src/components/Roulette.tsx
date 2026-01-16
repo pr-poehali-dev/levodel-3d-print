@@ -26,21 +26,38 @@ interface WonPrize {
   expiresAt: number;
 }
 
+interface Winner {
+  id: string;
+  name: string;
+  prize: string;
+  timeAgo: string;
+}
+
 const prizes: Prize[] = [
-  { id: 1, name: 'Скидка 20%', icon: 'Tag', chance: 20, color: 'bg-green-500', discount: 20, isDiscount: true },
-  { id: 2, name: 'Скидка 15%', icon: 'Tag', chance: 20, color: 'bg-blue-500', discount: 15, isDiscount: true },
-  { id: 3, name: 'Скидка 25%', icon: 'Tag', chance: 20, color: 'bg-purple-500', discount: 25, isDiscount: true },
-  { id: 4, name: 'iPhone 17 Pro Max', icon: 'Smartphone', chance: 0, color: 'bg-red-500', isDiscount: false },
-  { id: 5, name: 'Скидка 30%', icon: 'Percent', chance: 15, color: 'bg-yellow-500', discount: 30, isDiscount: true },
-  { id: 6, name: '3D принтер Bambu', icon: 'Box', chance: 0, color: 'bg-orange-500', isDiscount: false },
-  { id: 7, name: 'Скидка 10%', icon: 'Tag', chance: 15, color: 'bg-pink-500', discount: 10, isDiscount: true },
-  { id: 8, name: 'Tesla Model 3', icon: 'Car', chance: 0, color: 'bg-indigo-500', isDiscount: false },
-  { id: 9, name: 'Скидка 35%', icon: 'BadgePercent', chance: 10, color: 'bg-emerald-500', discount: 35, isDiscount: true },
+  { id: 1, name: 'Скидка 30% на услуги', icon: 'Wrench', chance: 25, color: 'bg-blue-600', discount: 30, isDiscount: true },
+  { id: 2, name: 'Скидка 20% на прототипы', icon: 'Box', chance: 20, color: 'bg-green-600', discount: 20, isDiscount: true },
+  { id: 3, name: 'Скидка 30% на игрушки', icon: 'Gamepad2', chance: 20, color: 'bg-pink-600', discount: 30, isDiscount: true },
+  { id: 4, name: 'Бесплатное 3D сканирование', icon: 'Scan', chance: 10, color: 'bg-purple-600', discount: 100, isDiscount: true },
+  { id: 5, name: 'Скидка 15% на моделирование', icon: 'PenTool', chance: 15, color: 'bg-yellow-600', discount: 15, isDiscount: true },
+  { id: 6, name: 'Скидка 25% на фигурки', icon: 'Paintbrush', chance: 10, color: 'bg-orange-600', discount: 25, isDiscount: true },
 ];
 
 const SPIN_COST = 3;
 const DAILY_BONUS = 10;
 const TELEGRAM_BONUS = 50;
+
+const fakeWinners: Winner[] = [
+  { id: '1', name: 'Светлана Н.', prize: 'Скидка 30% на услуги', timeAgo: '3 минуты назад' },
+  { id: '2', name: 'Дмитрий К.', prize: 'Бесплатное 3D сканирование', timeAgo: '12 минут назад' },
+  { id: '3', name: 'Анна М.', prize: 'Скидка 20% на прототипы', timeAgo: '25 минут назад' },
+  { id: '4', name: 'Игорь В.', prize: 'Скидка 30% на игрушки', timeAgo: '34 минуты назад' },
+  { id: '5', name: 'Елена П.', prize: 'Скидка 25% на фигурки', timeAgo: '41 минута назад' },
+  { id: '6', name: 'Максим Р.', prize: 'Скидка 15% на моделирование', timeAgo: '58 минут назад' },
+  { id: '7', name: 'Ольга С.', prize: 'Скидка 30% на услуги', timeAgo: '1 час назад' },
+  { id: '8', name: 'Александр Т.', prize: 'Бесплатное 3D сканирование', timeAgo: '1 час 15 минут назад' },
+  { id: '9', name: 'Мария Л.', prize: 'Скидка 20% на прототипы', timeAgo: '1 час 32 минуты назад' },
+  { id: '10', name: 'Сергей Б.', prize: 'Скидка 30% на игрушки', timeAgo: '2 часа назад' },
+];
 
 export default function Roulette() {
   const navigate = useNavigate();
@@ -52,6 +69,7 @@ export default function Roulette() {
   const [telegramSubscribed, setTelegramSubscribed] = useState(false);
   const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [currentWonPrize, setCurrentWonPrize] = useState<WonPrize | null>(null);
+  const [recentWinners, setRecentWinners] = useState<Winner[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,6 +107,21 @@ export default function Roulette() {
       });
     }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const shuffled = [...fakeWinners].sort(() => Math.random() - 0.5);
+    setRecentWinners(shuffled.slice(0, 3));
+
+    const winnerInterval = setInterval(() => {
+      const randomWinner = fakeWinners[Math.floor(Math.random() * fakeWinners.length)];
+      setRecentWinners((prev) => {
+        const newWinners = [randomWinner, ...prev.slice(0, 2)];
+        return newWinners;
+      });
+    }, Math.random() * (80 - 20) * 60 * 1000 + 20 * 60 * 1000);
+
+    return () => clearInterval(winnerInterval);
   }, []);
 
   const handleTelegramSubscribe = () => {
@@ -147,6 +180,9 @@ export default function Roulette() {
     const newBalance = balance - SPIN_COST;
     setBalance(newBalance);
     localStorage.setItem('plasticBalance', newBalance.toString());
+
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7/AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==');
+    audio.play().catch(() => {});
 
     const winningIndex = selectWinningPrize();
     const itemWidth = 170;
@@ -307,6 +343,36 @@ export default function Roulette() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Trophy" className="text-yellow-600" />
+                  Недавние победители
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentWinners.map((winner) => (
+                    <div
+                      key={winner.id}
+                      className="bg-white border border-yellow-200 rounded-lg p-3 animate-fade-in"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Icon name="User" size={16} className="text-yellow-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-900 text-sm">{winner.name}</p>
+                          <p className="text-xs text-gray-600 truncate">{winner.prize}</p>
+                          <p className="text-xs text-gray-400 mt-1">{winner.timeAgo}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
