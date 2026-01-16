@@ -7,28 +7,33 @@
       "expectedStatus": 200
     },
     {
-      "name": "Test POST with valid data",
+      "name": "Test POST with valid order data",
       "method": "POST",
       "path": "/",
       "body": {
-        "name": "Тест Тестович",
+        "name": "Иван Тестовый",
+        "phone": "+7 900 123-45-67",
         "email": "test@example.com",
-        "phone": "+7 (999) 123-45-67",
-        "description": "Тестовая заявка на печать детали"
+        "length": "10",
+        "width": "10",
+        "height": "5",
+        "material": "pla",
+        "quantity": "1",
+        "description": "Тестовая модель для проверки",
+        "fileLink": "https://example.com/model.stl"
       },
       "expectedStatus": 200,
       "expectedBody": {
-        "success": true,
-        "message": "string"
+        "success": true
       },
       "bodyMatcher": "partial"
     },
     {
-      "name": "Test POST with missing fields",
+      "name": "Test POST with missing required fields",
       "method": "POST",
       "path": "/",
       "body": {
-        "name": "Тест"
+        "email": "test@example.com"
       },
       "expectedStatus": 400,
       "expectedBody": {
